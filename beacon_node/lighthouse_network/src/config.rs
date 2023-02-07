@@ -350,6 +350,7 @@ pub fn gossipsub_config(network_load: u8, fork_context: Arc<ForkContext>) -> Gos
         .duplicate_cache_time(DUPLICATE_CACHE_TIME)
         .message_id_fn(gossip_message_id)
         .fast_message_id_fn(fast_gossip_message_id)
+        .flood_publish(false)
         .allow_self_origin(true)
         .build()
         .expect("valid gossipsub configuration")
