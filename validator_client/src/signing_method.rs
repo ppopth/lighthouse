@@ -9,6 +9,7 @@ use lockfile::Lockfile;
 use parking_lot::Mutex;
 use reqwest::Client;
 use slog::{info, Logger};
+use std::io::Write;
 use std::path::PathBuf;
 use std::sync::Arc;
 use task_executor::TaskExecutor;
@@ -125,9 +126,11 @@ impl SigningMethod {
         executor: &TaskExecutor,
         log: &Logger,
     ) -> Result<Signature, Error> {
-        info!(log, "inside get_signature");
+        println!("inside get_signature");
+        std::io::stdout().flush().unwrap();
         let domain_hash = signing_context.domain_hash(spec);
-        info!(log, "inside get_signature, after domain_hash");
+        println!("inside get_signature, after domain_hash");
+        std::io::stdout().flush().unwrap();
         let SigningContext {
             fork,
             genesis_validators_root,
@@ -135,17 +138,20 @@ impl SigningMethod {
         } = signing_context;
 
         let signing_root = signable_message.signing_root(domain_hash);
-        info!(log, "inside get_signature, after signing_root");
+        println!("inside get_signature, after signing_root");
+        std::io::stdout().flush().unwrap();
 
         let fork_info = Some(ForkInfo {
             fork,
             genesis_validators_root,
         });
 
-        info!(log, "inside get_signature, before get_signature_from_root");
+        println!("inside get_signature, before get_signature_from_root");
+        std::io::stdout().flush().unwrap();
         let result = self.get_signature_from_root(signable_message, signing_root, executor, fork_info)
             .await;
-        info!(log, "inside get_signature, after get_signature_from_root");
+        println!("inside get_signature, after get_signature_from_root");
+        std::io::stdout().flush().unwrap();
         result
     }
 
