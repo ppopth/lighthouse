@@ -373,6 +373,7 @@ impl<T: SlotClock + 'static, E: EthSpec> ValidatorStore<T, E> {
         validator_pubkey: PublicKeyBytes,
         signing_epoch: Epoch,
     ) -> Result<Signature, Error> {
+        info!(self.log, "randao_reveal"; "validator_pubkey" => validator_pubkey.as_hex_string());
         let signing_method = self.doppelganger_checked_signing_method(validator_pubkey)?;
         let signing_context = self.signing_context(Domain::Randao, signing_epoch);
 
@@ -382,6 +383,7 @@ impl<T: SlotClock + 'static, E: EthSpec> ValidatorStore<T, E> {
                 signing_context,
                 &self.spec,
                 &self.task_executor,
+                &self.log,
             )
             .await?;
 
@@ -460,6 +462,7 @@ impl<T: SlotClock + 'static, E: EthSpec> ValidatorStore<T, E> {
         block: BeaconBlock<E, Payload>,
         current_slot: Slot,
     ) -> Result<SignedBeaconBlock<E, Payload>, Error> {
+        info!(self.log, "sign_block"; "validator_pubkey" => validator_pubkey.as_hex_string());
         // Make sure the block slot is not higher than the current slot to avoid potential attacks.
         if block.slot() > current_slot {
             warn!(
@@ -497,6 +500,7 @@ impl<T: SlotClock + 'static, E: EthSpec> ValidatorStore<T, E> {
                         signing_context,
                         &self.spec,
                         &self.task_executor,
+                        &self.log,
                     )
                     .await?;
                 Ok(SignedBeaconBlock::from_block(block, signature))
@@ -538,6 +542,7 @@ impl<T: SlotClock + 'static, E: EthSpec> ValidatorStore<T, E> {
         attestation: &mut Attestation<E>,
         current_epoch: Epoch,
     ) -> Result<(), Error> {
+        info!(self.log, "sign_attestation"; "validator_pubkey" => validator_pubkey.as_hex_string());
         // Make sure the target epoch is not higher than the current epoch to avoid potential attacks.
         if attestation.data.target.epoch > current_epoch {
             return Err(Error::GreaterThanCurrentEpoch {
@@ -566,6 +571,7 @@ impl<T: SlotClock + 'static, E: EthSpec> ValidatorStore<T, E> {
                         signing_context,
                         &self.spec,
                         &self.task_executor,
+                        &self.log,
                     )
                     .await?;
                 attestation
@@ -656,6 +662,7 @@ impl<T: SlotClock + 'static, E: EthSpec> ValidatorStore<T, E> {
         aggregate: Attestation<E>,
         selection_proof: SelectionProof,
     ) -> Result<SignedAggregateAndProof<E>, Error> {
+        info!(self.log, "produce_signed_aggregate_and_proof"; "validator_pubkey" => validator_pubkey.as_hex_string());
         let signing_epoch = aggregate.data.target.epoch;
         let signing_context = self.signing_context(Domain::AggregateAndProof, signing_epoch);
 
@@ -672,6 +679,7 @@ impl<T: SlotClock + 'static, E: EthSpec> ValidatorStore<T, E> {
                 signing_context,
                 &self.spec,
                 &self.task_executor,
+                &self.log,
             )
             .await?;
 
@@ -687,6 +695,7 @@ impl<T: SlotClock + 'static, E: EthSpec> ValidatorStore<T, E> {
         validator_pubkey: PublicKeyBytes,
         slot: Slot,
     ) -> Result<SelectionProof, Error> {
+        info!(self.log, "produce_selection_proof"; "validator_pubkey" => validator_pubkey.as_hex_string());
         let signing_epoch = slot.epoch(E::slots_per_epoch());
         let signing_context = self.signing_context(Domain::SelectionProof, signing_epoch);
 
@@ -705,6 +714,7 @@ impl<T: SlotClock + 'static, E: EthSpec> ValidatorStore<T, E> {
                 signing_context,
                 &self.spec,
                 &self.task_executor,
+                &self.log,
             )
             .await
             .map_err(Error::UnableToSign)?;
@@ -721,6 +731,7 @@ impl<T: SlotClock + 'static, E: EthSpec> ValidatorStore<T, E> {
         slot: Slot,
         subnet_id: SyncSubnetId,
     ) -> Result<SyncSelectionProof, Error> {
+        info!(self.log, "produce_sync_selection_proof"; "validator_pubkey" => validator_pubkey.as_hex_string());
         let signing_epoch = slot.epoch(E::slots_per_epoch());
         let signing_context =
             self.signing_context(Domain::SyncCommitteeSelectionProof, signing_epoch);
@@ -744,6 +755,7 @@ impl<T: SlotClock + 'static, E: EthSpec> ValidatorStore<T, E> {
                 signing_context,
                 &self.spec,
                 &self.task_executor,
+                &self.log,
             )
             .await
             .map_err(Error::UnableToSign)?;
@@ -758,6 +770,7 @@ impl<T: SlotClock + 'static, E: EthSpec> ValidatorStore<T, E> {
         validator_index: u64,
         validator_pubkey: &PublicKeyBytes,
     ) -> Result<SyncCommitteeMessage, Error> {
+        info!(self.log, "produce_sync_committee_signature"; "validator_pubkey" => validator_pubkey.as_hex_string());
         let signing_epoch = slot.epoch(E::slots_per_epoch());
         let signing_context = self.signing_context(Domain::SyncCommittee, signing_epoch);
 
@@ -773,6 +786,7 @@ impl<T: SlotClock + 'static, E: EthSpec> ValidatorStore<T, E> {
                 signing_context,
                 &self.spec,
                 &self.task_executor,
+                &self.log,
             )
             .await
             .map_err(Error::UnableToSign)?;
@@ -797,6 +811,7 @@ impl<T: SlotClock + 'static, E: EthSpec> ValidatorStore<T, E> {
         contribution: SyncCommitteeContribution<E>,
         selection_proof: SyncSelectionProof,
     ) -> Result<SignedContributionAndProof<E>, Error> {
+        info!(self.log, "produce_signed_contribution_and_proof"; "aggregator_pubkey" => aggregator_pubkey.as_hex_string());
         let signing_epoch = contribution.slot.epoch(E::slots_per_epoch());
         let signing_context = self.signing_context(Domain::ContributionAndProof, signing_epoch);
 
@@ -815,6 +830,7 @@ impl<T: SlotClock + 'static, E: EthSpec> ValidatorStore<T, E> {
                 signing_context,
                 &self.spec,
                 &self.task_executor,
+                &self.log,
             )
             .await
             .map_err(Error::UnableToSign)?;

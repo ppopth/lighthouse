@@ -8,6 +8,7 @@ use eth2_keystore::Keystore;
 use lockfile::Lockfile;
 use parking_lot::Mutex;
 use reqwest::Client;
+use slog::{info, Logger};
 use std::path::PathBuf;
 use std::sync::Arc;
 use task_executor::TaskExecutor;
@@ -122,8 +123,11 @@ impl SigningMethod {
         signing_context: SigningContext,
         spec: &ChainSpec,
         executor: &TaskExecutor,
+        log: &Logger,
     ) -> Result<Signature, Error> {
+        info!(log, "inside get_signature");
         let domain_hash = signing_context.domain_hash(spec);
+        info!(log, "inside get_signature, after domain_hash");
         let SigningContext {
             fork,
             genesis_validators_root,
@@ -131,14 +135,18 @@ impl SigningMethod {
         } = signing_context;
 
         let signing_root = signable_message.signing_root(domain_hash);
+        info!(log, "inside get_signature, after signing_root");
 
         let fork_info = Some(ForkInfo {
             fork,
             genesis_validators_root,
         });
 
-        self.get_signature_from_root(signable_message, signing_root, executor, fork_info)
-            .await
+        info!(log, "inside get_signature, before get_signature_from_root");
+        let result = self.get_signature_from_root(signable_message, signing_root, executor, fork_info)
+            .await;
+        info!(log, "inside get_signature, after get_signature_from_root");
+        result
     }
 
     pub async fn get_signature_from_root<T: EthSpec, Payload: ExecPayload<T>>(
