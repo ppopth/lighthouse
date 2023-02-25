@@ -154,16 +154,7 @@ impl SigningMethod {
                     metrics::start_timer_vec(&metrics::SIGNING_TIMES, &[metrics::LOCAL_KEYSTORE]);
 
                 let voting_keypair = voting_keypair.clone();
-                // Spawn a blocking task to produce the signature. This avoids blocking the core
-                // tokio executor.
-                let signature = executor
-                    .spawn_blocking_handle(
-                        move || voting_keypair.sk.sign(signing_root),
-                        "local_keystore_signer",
-                    )
-                    .ok_or(Error::ShuttingDown)?
-                    .await
-                    .map_err(|e| Error::TokioJoin(e.to_string()))?;
+                let signature = voting_keypair.sk.sign(signing_root);
                 Ok(signature)
             }
             SigningMethod::Web3Signer {
